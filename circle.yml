@@ -15,19 +15,40 @@ dependencies:
   cache_directories:
     - ~/.meteor
     - ~/node_modules
+    - ~/nvm/versions/node/v4.1.0/bin
+    - ~/nvm/versions/node/v4.1.0/lib/node_modules
   # Dependencies of the build run before CircleCI's inferred commands
   pre:
+    # Prepare TinyTest dependencies
     # If WebDriver is already cached, do not need to build it again.
-    - if [ ! -d ${HOME}/node_modules/selenium-webdriver/ ]; then ./tests/tinyTests/ci/installSeleniumWebDriver.sh; else echo "Selenium Webdriver seems to be cached"; fi;
+    - if [ ! -d ${HOME}/node_modules/selenium-webdriver/ ]; then ./tests/tinyTests/ci/installSeleniumWebDriver.sh; else echo "Selenium WebDriver seems to be cached"; fi;
     # Install  Meteor
-    - mkdir -p ${HOME}/.meteor
+    - mkdir -p ~/.meteor
+    # Make a place for meteor logs
+    - sudo mkdir -p /var/log/meteor; sudo chmod a+rwx /var/log/meteor; touch /var/log/meteor/ci4meteor.log
     # If Meteor is already cached, do not need to build it again.
-    - if [ ! -e ${HOME}/.meteor/meteor ]; then curl https://install.meteor.com | /bin/sh; fi;
+    - if [ ! -e ~/.meteor/meteor ]; then curl https://install.meteor.com | /bin/sh; fi
+    # Prepare Linting dependencies
+    - if [ ! -d ~/nvm/versions/node/v4.1.0/lib/node_modules/eslint ]; then npm install -gy eslint; fi;
+    - if [ ! -d ~/nvm/versions/node/v4.1.0/lib/node_modules/eslint-plugin-react ]; then npm install -gy eslint-plugin-react; fi;
+    - if [ ! -d ~/nvm/versions/node/v4.1.0/lib/node_modules/babel-eslint ]; then npm install -gy babel-eslint; fi;
+    # Prepare Nightwatch dependencies
+    - ./tests/nightwatch/bin/install-nightwatch-dependencies.sh
     # Pull each of our packages and link them into our project
     - ./packages/obtain_managed_packages.sh
     # ADD_MORE_DEPENDENCY_PREPARATIONS_ABOVE_THIS_LINE
-
+    #
 test:
   # Tests that replace CircleCI's inferred tests
   override:
-    - ./tests/tinyTests/test-all.sh
+    # Run all unit tests
+    - ${HOME}/${CIRCLE_PROJECT_REPONAME}/tests/tinyTests/test-all.sh
+    # Launch Meteor in background
+    - ~/.meteor/meteor:
+          background: true
+    # Prepare for end to end tests
+    - mkdir -p ${CIRCLE_TEST_REPORTS}/nightwatch/
+    # Run all end to end tests
+    - ${HOME}/${CIRCLE_PROJECT_REPONAME}/tests/nightwatch/runTests.js > ${CIRCLE_TEST_REPORTS}/nightwatch/result.json
+    # Display end to end tests results
+    - cat ${CIRCLE_TEST_REPORTS}/nightwatch/result.json | bunyan -o short
