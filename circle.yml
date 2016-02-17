@@ -23,6 +23,8 @@ dependencies:
     - mkdir -p ${HOME}/.meteor
     # If Meteor is already cached, do not need to build it again.
     - if [ ! -e ${HOME}/.meteor/meteor ]; then curl https://install.meteor.com | /bin/sh; fi;
+    # Pull each of our packages and link them into our project
+    - ./packages/obtain_managed_packages.sh
     # ADD_MORE_DEPENDENCY_PREPARATIONS_ABOVE_THIS_LINE
 
 test:
