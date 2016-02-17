@@ -3,7 +3,8 @@
     "version": "0.7.6"
   },
   "src_folders": [
-    "./tests/nightwatch/walkthroughs"
+       "./packages/mypackage/tools/testing", 
+       "./tests/nightwatch/walkthroughs"
   ],
   "output_folder": "./tests/nightwatch/reports",
   "globals_path": "./tests/nightwatch/config/globals.json",
