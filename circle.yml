@@ -7,6 +7,7 @@
 machine:
   environment:
     METEOR_CMD: ${HOME}/.meteor/meteor
+    TARGET_SERVER_URL: ${CIRCLE_PROJECT_REPONAME}-${CIRCLE_PROJECT_USERNAME}.meteor.com
     # ADD_MORE_ENVIRONMENT_VARIABLES_ABOVE_THIS_LINE
   node:
     # Can't be certain that this build wlll work with all future versions: so specify.
@@ -40,6 +41,8 @@ dependencies:
     - ./tests/nightwatch/bin/install-nightwatch-dependencies.sh
     # Pull each of our packages and link them into our project
     - ./packages/obtain_managed_packages.sh
+    # Install Android dependencies
+    - source ./tools/android/install-android-dependencies.sh && PrepareAndroidSDK
     # ADD_MORE_DEPENDENCY_PREPARATIONS_ABOVE_THIS_LINE
     #
 test:
@@ -58,3 +61,15 @@ test:
     - ${HOME}/${CIRCLE_PROJECT_REPONAME}/tests/nightwatch/runTests.js > ${CIRCLE_TEST_REPORTS}/nightwatch/result.json
     # Display end to end tests results
     - cat ${CIRCLE_TEST_REPORTS}/nightwatch/result.json | bunyan -o short
+deployment:
+  production:
+    branch: master
+    commands:
+      # Build the AndroidAPK.
+      - source ./tools/android/build-android-apk.sh && BuildAndroidAPK
+      # Deploying to meteor.com
+      - source ./tools/meteor/deploy-to-server.sh && DeployToMeteorServer
+      # ADD_MORE_DEPLOYMENT_COMMANDS_ABOVE_THIS_LINE
+
+
+
